@@ -13,8 +13,8 @@ import it.unibo.oop.JFrameUtil;
 
 import java.io.Serial;
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+//import java.util.concurrent.ExecutorService;
+//import java.util.concurrent.Executors;
 
 /**
  * Second example of reactive GUI.
@@ -26,6 +26,9 @@ public final class ConcurrentGUI extends JFrame {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentGUI.class);
     private final JLabel display = new JLabel();
 
+    /**
+     * Builds a new CGUI.
+     */
     public ConcurrentGUI() {
         super();
         JFrameUtil.dimensionJFrame(this);
@@ -45,9 +48,9 @@ public final class ConcurrentGUI extends JFrame {
          * java.util.concurrent.ExecutorService
          */
         final Agent agent = new Agent();
-        //new Thread(agent).start();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(agent);
+        new Thread(agent).start();
+        //final ExecutorService executor = Executors.newSingleThreadExecutor();
+        //executor.execute(agent);
         /*
          * Register a listener that stops it
          */
@@ -57,8 +60,8 @@ public final class ConcurrentGUI extends JFrame {
             up.setEnabled(false);
             stop.setEnabled(false);
         });
-        down.addActionListener(e->agent.decrement());
-        up.addActionListener(e->agent.increment());
+        down.addActionListener(e -> agent.decrement());
+        up.addActionListener(e -> agent.increment());
     }
 
     /*
@@ -82,8 +85,8 @@ public final class ConcurrentGUI extends JFrame {
 
         @Override
         public void run() {
-            while(!this.stop){
-                if(!this.decrement) {
+            while (!this.stop) {
+                if (!this.decrement) {
                     try {
                         // The EDT doesn't access `counter` anymore, it doesn't need to be volatile
                         final var nextText = Integer.toString(this.counter);
@@ -113,7 +116,7 @@ public final class ConcurrentGUI extends JFrame {
         public void stopCounting() {
             this.stop = true;
         }
-        
+
         public void decrement() {
             this.decrement = true;
         }

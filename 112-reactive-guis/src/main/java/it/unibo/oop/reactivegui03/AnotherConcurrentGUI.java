@@ -1,9 +1,10 @@
 package it.unibo.oop.reactivegui03;
 
 import java.io.Serial;
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+//import java.util.concurrent.ExecutorService;
+//import java.util.concurrent.Executors;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -21,15 +22,18 @@ import it.unibo.oop.JFrameUtil;
  */
 public final class AnotherConcurrentGUI extends JFrame {
     @Serial
-    private static final long MILLIES=10000;
+    private static final long MILLIES = 10_000;
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LoggerFactory.getLogger(AnotherConcurrentGUI.class);
     private final JLabel display = new JLabel();
-    final Agent agent = new Agent();
-    final JButton up = new JButton("up");
-    final JButton down = new JButton("down");
-    final JButton stop = new JButton("stop");
+    private final Agent agent = new Agent();
+    private final JButton up = new JButton("up");
+    private final JButton down = new JButton("down");
+    private final JButton stop = new JButton("stop");
 
+    /**
+     * Builds a new CGUI.
+     */
     public AnotherConcurrentGUI() {
         super();
         JFrameUtil.dimensionJFrame(this);
@@ -47,10 +51,11 @@ public final class AnotherConcurrentGUI extends JFrame {
          */
 
         final AgentSleep agentSleep = new AgentSleep();
-        //new Thread(agent).start();
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        executor.submit(agent);
-        executor.submit(agentSleep);
+        new Thread(agent).start();
+        //final ExecutorService executor = Executors.newFixedThreadPool(2);
+        //executor.execute(agent);
+        //executor.execute(agentSleep);
+        new Thread(agentSleep).start();
         /*
          * Register a listener that stops it
          */
@@ -60,15 +65,15 @@ public final class AnotherConcurrentGUI extends JFrame {
             up.setEnabled(false);
             stop.setEnabled(false);
         });
-        down.addActionListener(e->agent.decrement());
-        up.addActionListener(e->agent.increment());
+        down.addActionListener(e -> agent.decrement());
+        up.addActionListener(e -> agent.increment());
     }
 
     /*
      * The counter agent is implemented as a nested class. This makes it
      * invisible outside and encapsulated.
      */
-    private final class Agent implements Runnable {
+    private final class Agent implements Runnable, Serializable {
         /*
          * Stop is volatile to ensure visibility. Look at:
          *
@@ -79,14 +84,16 @@ public final class AnotherConcurrentGUI extends JFrame {
          * http://archive.is/4lsKW
          *
          */
+        private static final long serialVersionUID = 1L;
+
         private volatile boolean decrement;
         private volatile boolean stop;
         private int counter;
 
         @Override
         public void run() {
-            while(!this.stop){
-                if(!this.decrement) {
+            while (!this.stop) {
+                if (!this.decrement) {
                     try {
                         // The EDT doesn't access `counter` anymore, it doesn't need to be volatile
                         final var nextText = Integer.toString(this.counter);
@@ -116,7 +123,7 @@ public final class AnotherConcurrentGUI extends JFrame {
         public void stopCounting() {
             this.stop = true;
         }
-        
+
         public void decrement() {
             this.decrement = true;
         }
@@ -125,19 +132,19 @@ public final class AnotherConcurrentGUI extends JFrame {
             this.decrement = false;
         }
     }
+
     private final class AgentSleep implements Runnable {
         @Override
         public void run() {
-            try{
+            try {
                 Thread.sleep(MILLIES);
                 agent.stopCounting();
                 down.setEnabled(false);
                 up.setEnabled(false);
                 stop.setEnabled(false);
-            }catch(InterruptedException ex){
+            } catch (final InterruptedException ex) {
                 LOGGER.error(ex.getMessage(), ex);
             }
-        }
-            
+        } 
     }
 }
